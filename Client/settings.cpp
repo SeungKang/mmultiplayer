@@ -1,4 +1,5 @@
 #include <fstream>
+#include <utility>
 #include <Windows.h>
 
 #include "settings.h"
@@ -17,8 +18,8 @@ void Settings::SetSetting(const char *menu, const char *key, json value) {
 		settings[menu] = json::object();
 	}
 
-	settings[menu][key] = value;
-	Settings::Save();
+	settings[menu][key] = std::move(value);
+        Settings::Save();
 }
 
 json Settings::GetSetting(const char *menu, const char *key, json defaultValue) {
@@ -28,8 +29,8 @@ json Settings::GetSetting(const char *menu, const char *key, json defaultValue) 
 
 	auto &v = settings[menu][key];
 	if (v.is_null() || (v.type() != defaultValue.type() && v.is_number() != defaultValue.is_number())) {
-		v = defaultValue;
-		Settings::Save();
+		v = std::move(defaultValue);
+		Settings::Save(); // This is not needed due to ADL (https://en.wikipedia.org/wiki/Argument-dependent_name_lookup).
 	}
 
 	return v;
@@ -38,14 +39,16 @@ json Settings::GetSetting(const char *menu, const char *key, json defaultValue) 
 void Settings::Load() {
 	auto reset = true;
 
-	auto f = new std::ifstream(GetSettingsPath());
+	auto f = std::ifstream(GetSettingsPath());
 	if (f) {
 		try {
-			settings = json::parse(*f);
+			settings = json::parse(f);
 			reset = false;
-		} catch (json::parse_error e) {}
+		} catch (json::parse_error& e) {
+		    MessageBoxA(nullptr, e.what(), "Error", 0);
+		}
 
-		f->close();
+		f.close(); // If this is not called this would be automatically closed when the function ends due to RAII (https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization), but it's good practice to close it manually
 	}
 
 	if (reset) {

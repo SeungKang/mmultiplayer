@@ -22,20 +22,30 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved) {
 		Addon *addons[] = { new Client(), new Trainer(), new Dolly() };
 
 		if (!Engine::Initialize()) {
-			MessageBoxA(0, "Failed to initialize engine", "Fatal", 0);
-			return TRUE;
+			MessageBoxA(nullptr, "Failed to initialize engine", "Fatal", 0);
+			goto CleanUp;
 		}
 
 		if (!Menu::Initialize()) {
-			MessageBoxA(0, "Failed to initialize menu", "Fatal", 0);
-			return TRUE;
+			MessageBoxA(nullptr, "Failed to initialize menu", "Fatal", 0);
+		        goto CleanUp;
+			
 		}
 		
 		for (auto &addon : addons) {
 			if (!addon->Initialize()) {
-				MessageBoxA(0, ("Failed to initialize \"" + addon->GetName() + "\"").c_str(), "Fatal", 0);
+				MessageBoxA(nullptr, ("Failed to initialize \"" + addon->GetName() + "\"").c_str(), "Fatal", 0);
 			}
 		}
+
+                CleanUp:
+                for (auto &addon : addons) {
+                    delete addon;
+                }
+                
+                
+        
+                
 	}
 	
 	return TRUE;
