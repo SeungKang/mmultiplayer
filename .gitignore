@@ -358,3 +358,5 @@ Server/*.mod
 Server/*.sum
 Server/*.go
 !Server/main.go
+
+.idea
